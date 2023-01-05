@@ -6,8 +6,11 @@ import {
   StyleSheet,
   TextInput,
   ImageBackground,
+  TouchableOpacity,
 } from "react-native";
 import Image from "./Image.png";
+
+const colors = ['red', 'blue', 'green']
 
 export default class Screen1 extends Component {
   constructor(props) {
@@ -35,6 +38,20 @@ export default class Screen1 extends Component {
             style={styles.button}
           />
         </View>
+        <View style={styles.colorSelection}>
+          {colors.map(color => (
+            <TouchableOpacity
+              key={color}
+              style={{ backgroundColor: color }}
+              onPress={() =>
+                this.props.navigation.navigate('Chat', {
+                  name: this.state.name,
+                  backgroundColor: color,
+                })
+              }
+            />
+          ))}
+        </View>
       </ImageBackground>
     );
   }
@@ -58,6 +75,15 @@ const styles = StyleSheet.create({
 
   image: {
     flex: 1,
+    zIndex: 0,
+    justifyContent: "center",
+  },
+
+  colorSelection: {
+    zIndex: 3,
+    flex: 1,
+    maxHeight: 300,
+    alignItems: "center",
     justifyContent: "center",
   },
 });
