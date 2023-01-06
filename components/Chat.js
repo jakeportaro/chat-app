@@ -6,7 +6,7 @@ const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
 export default class Chat extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { backgroundColor: 'white' };
+    this.state = { backgroundColor: this.props.route.params.color };
   }
 
   componentDidMount() {
@@ -19,17 +19,7 @@ export default class Chat extends React.Component {
   render() {
     return (
       <View style={{flex: 1, backgroundColor: this.state.backgroundColor}}>
-         <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', position: 'absolute', top: 0, left: 0, right: 0, height: 50 }}>
-        {colors.map(color => (
-          <Button
-          key={color}
-          title={color}
-          onPress={() => this.setState({ backgroundColor: color })}
-          color="black"
-          buttonStyle={{ backgroundColor: color, borderColor: color, borderRadius: 50, borderWidth: 2 }}
-        />
-        ))}
-        </View>
+         <Text>Welcome to the Chat!</Text> 
       </View>
     );
   }
