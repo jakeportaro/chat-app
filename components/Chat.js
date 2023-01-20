@@ -4,6 +4,8 @@ import { GiftedChat, Bubble } from "react-native-gifted-chat";
 import firebase from "firebase";
 import "firebase/firestore";
 import "firebase/auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from '@react-native-community/netinfo';
 
 const colors = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"];
 
@@ -54,7 +56,68 @@ export default class Chat extends React.Component {
       user: message.user,
     });
   };
+
+  async getMessages() {
+    let messages = '';
+    try {
+      messages = await AsyncStorage.getItem('messages') || [];
+      this.setState({
+        messages: JSON.parse(messages)
+      });
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  onSend(messages = []) {
+    this.setState((previousState) => ({
+      messages: GiftedChat.append(previousState.messages, messages),
+    }),
+    () => {
+      this.saveMessages();
+      this.addMessage();
+    }
+    );
+  };
+
+  async saveMessages() {
+    try {
+      await AsyncStorage.setItem('messages', JSON.stringify(this.state.messages));
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  async saveMessages() {
+    try {
+      await AsyncStorage.setItem('messages', JSON.stringify(this.state.messages));
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  renderInputToolbar(props) {
+    if (this.state.isConnected == false) {
+    } else {
+      return(
+        <InputToolbar
+        {...props}
+        />
+      );
+    }
+  };
+
   componentDidMount() {
+    //checks if user in online
+    NetInfo.fetch().then(connection => {
+      if (connection.isConnected) {
+        console.log('online');
+      } else {
+        console.log('offline');
+      }
+    });
+    //retrieves messages from asyncStorage
+    this.getMessages();
      // creating a references to shoppinglists collection
      this.referenceMessages = firebase
      .firestore()
@@ -80,15 +143,7 @@ export default class Chat extends React.Component {
     });
   };
 
-  onSend(messages = []) {
-    this.setState((previousState) => ({
-      messages: GiftedChat.append(previousState.messages, messages),
-    }),
-    () => {
-      this.addMessage();
-    }
-    );
-  };
+  
 
   componentWillUnmount() {
     // stop listening to authentication
