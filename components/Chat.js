@@ -1,11 +1,14 @@
 import React from "react";
-import { View, Text, Button } from "react-native";
-import { GiftedChat, Bubble } from "react-native-gifted-chat";
+import { View, Text, Button, Image} from "react-native";
+import * as Location from 'expo-location';
+import { GiftedChat, Bubble, InputToolbar } from "react-native-gifted-chat";
 import firebase from "firebase";
 import "firebase/firestore";
 import "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from '@react-native-community/netinfo';
+import CustomActions from './CustomActions';
+import MapView from 'react-native-maps';
 
 const colors = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"];
 
@@ -15,6 +18,10 @@ export default class Chat extends React.Component {
     this.state = {
       backgroundColor: this.props.route.params.color,
       messages: [],
+      user: {},
+      image: null,
+      location: null,
+      isConnected: false
 
     };
     if (!firebase.apps.length) {
@@ -30,21 +37,28 @@ export default class Chat extends React.Component {
     this.referenceMessagesUser = null;
     this.addMessage = this.addMessage.bind(this);
   }
-  onCollectionUpdate = (querySnapshot) => {
-   const messages = [];
-   // go through each document
-   querySnapshot.forEach((doc) => {
-     // get the QueryDocumentSnapshot's data
-     let data = doc.data();
-     messages.push({
-       _id: data._id,
-       text: data.text,
-       createdAt: data.createdAt.toDate(),
-       user: data.user,
-     });
-   });
-   this.setState({ messages });
-  };
+   // retrieve snapshot of messages from firestore when changed
+   onCollectionUpdate = (querySnapshot) => {
+    if (!this.state.isConnected) return;
+    const messages = [];
+    // go through each document
+    querySnapshot.forEach((doc) => {
+      // get the QueryDocumentSnapshot's data
+      let data = doc.data();
+      messages.push({
+        _id: data._id,
+        text: data.text,
+        createdAt: data.createdAt.toDate(),
+        user: {
+          _id: data.user._id,
+          name: data.user.name,
+        },
+        image: data.image || null,
+        location: data.location || null
+      });
+    });
+    this.setState({ messages });
+  }
 
    // save message to Firestore
    addMessage = () => {
@@ -54,8 +68,12 @@ export default class Chat extends React.Component {
       text: message.text || "",
       createdAt: message.createdAt,
       user: message.user,
+      image: message.image || '',
+      location: message.location || null,
     });
   };
+
+
 
   async getMessages() {
     let messages = '';
@@ -80,13 +98,7 @@ export default class Chat extends React.Component {
     );
   };
 
-  async saveMessages() {
-    try {
-      await AsyncStorage.setItem('messages', JSON.stringify(this.state.messages));
-    } catch (error) {
-      console.log(error.message);
-    }
-  };
+
 
   async saveMessages() {
     try {
@@ -95,9 +107,10 @@ export default class Chat extends React.Component {
       console.log(error.message);
     }
   };
+
 
   renderInputToolbar(props) {
-    if (this.state.isConnected == false) {
+    if (!this.state.isConnected) {
     } else {
       return(
         <InputToolbar
@@ -165,10 +178,40 @@ export default class Chat extends React.Component {
     )
   };
 
+  //  display communication features
+  renderCustomActions = (props) => {
+    return <CustomActions {...props} />;
+  };
+
+
+  renderCustomView (props) {
+    const { currentMessage} = props;
+    if (currentMessage.location) {
+      return (
+          <MapView
+            style={{width: 150,
+              height: 100,
+              borderRadius: 13,
+              margin: 3}}
+            region={{
+              latitude: currentMessage.location.latitude,
+              longitude: currentMessage.location.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            }}
+          />
+      );
+    }
+    return null;
+  }
+
   render() {
     return (
       <View style={{ flex: 1, backgroundColor: this.state.backgroundColor }}>
         <GiftedChat
+        //  renderInputToolbar={this.renderInputToolbar.bind(this)}
+        renderActions={this.renderCustomActions}
+        renderCustomView={this.renderCustomView}
         renderBubble={this.renderBubble.bind(this)}
           messages={this.state.messages}
           onSend={(messages) => this.onSend(messages)}
